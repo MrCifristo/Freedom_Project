@@ -2,19 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 const ChatBox = () => {
-    const { publicKey } = useParams();  // Obtener la llave pública de la URL
-    const [username, setUsername] = useState('');  // Guardar el nombre del usuario
-    const [hasJoinedChat, setHasJoinedChat] = useState(false);  // Verificar si se ha unido al chat
+    const { publicKey } = useParams();  
+    const [username, setUsername] = useState('');  
+    const [hasJoinedChat, setHasJoinedChat] = useState(false);  
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
-    const [file, setFile] = useState(null);  // Para almacenar el archivo seleccionado
-    const [filePreview, setFilePreview] = useState(null);  // Para previsualizar el archivo
-    const fileInputRef = useRef(null);  // Para resetear el input de archivo
+    const [file, setFile] = useState(null);  
+    const [filePreview, setFilePreview] = useState(null);  
+    const [popupMessage, setPopupMessage] = useState(null);  // Mensaje actual en el popup
+    const fileInputRef = useRef(null);  
 
     useEffect(() => {
         const simulateResponse = () => {
             if (messages.length > 0 && messages[messages.length - 1].sender === username) {
-                // Simula una respuesta después de 2 segundos
                 setTimeout(() => {
                     const newMessage = {
                         sender: 'Bot',
@@ -27,55 +27,58 @@ const ChatBox = () => {
         simulateResponse();
     }, [messages, username]);
 
-    // Función para enviar un mensaje o archivo
     const handleSendMessage = () => {
         if (message.trim() || file) {
             const newMessage = {
                 sender: username,
                 text: message,
-                file: file ? URL.createObjectURL(file) : null,  // Crear una URL para el archivo
+                file: file ? URL.createObjectURL(file) : null,  
             };
             setMessages([...messages, newMessage]);
             setMessage('');
-            setFile(null);  // Limpiar el archivo después de enviar
-            setFilePreview(null);  // Limpiar la previsualización
+            setFile(null);  
+            setFilePreview(null);  
             if (fileInputRef.current) {
-                fileInputRef.current.value = '';  // Limpiar el input de archivo
+                fileInputRef.current.value = '';  
             }
         }
     };
 
-    // Manejar el envío de mensajes al presionar "Enter"
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             handleSendMessage();
         }
     };
 
-    // Función para unirse al chat con el nombre de usuario
     const handleJoinChat = () => {
         if (username.trim()) {
             setHasJoinedChat(true);
         }
     };
 
-    // Manejar selección de archivo y previsualización
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         setFile(selectedFile);
-        setFilePreview(URL.createObjectURL(selectedFile));  // Crear una URL para previsualizar el archivo
+        setFilePreview(URL.createObjectURL(selectedFile));  
     };
 
-    // Función para copiar la llave pública
     const handleCopyPublicKey = () => {
         navigator.clipboard.writeText(publicKey);
         alert('Public Key Copied!');
     };
 
+    // Función para mostrar el popup con el mensaje y eliminarlo en 5 segundos
+    const handleShowPopupMessage = (msg, index) => {
+        setPopupMessage(msg);
+        setTimeout(() => {
+            setPopupMessage(null);
+            setMessages((prevMessages) => prevMessages.filter((_, i) => i !== index));  // Eliminar el mensaje
+        }, 5000);
+    };
+
     return (
         <div className="bg-gray-800 min-h-screen text-gray-200 p-6">
             {!hasJoinedChat ? (
-                // Formulario para elegir el nombre de usuario antes de ingresar al chat
                 <div className="text-center mt-20">
                     <h2 className="text-3xl font-bold mb-6">Choose a username</h2>
                     <input
@@ -115,11 +118,15 @@ const ChatBox = () => {
                                 {messages.map((msg, index) => (
                                     <li
                                         key={index}
-                                        className={`p-3 my-2 rounded-lg shadow-md transition-all duration-300 ease-in-out ${
-                                            msg.sender === username ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'
-                                        }`}
+                                        className="p-3 my-2 rounded-lg shadow-md transition-all duration-300 ease-in-out bg-gray-600 text-gray-300"
                                     >
-                                        <strong>{msg.sender}:</strong> {msg.text}
+                                        <strong>{msg.sender}:</strong>
+                                        <button
+                                            className="ml-2 bg-blue-600 text-white px-4 py-2 rounded-full transition-transform transform hover:scale-105 duration-300"
+                                            onClick={() => handleShowPopupMessage(msg.text, index)}
+                                        >
+                                            Abrir
+                                        </button>
                                         {msg.file && (
                                             <div className="mt-2">
                                                 <a href={msg.file} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
@@ -133,7 +140,6 @@ const ChatBox = () => {
                         )}
                     </div>
 
-                    {/* Previsualización de archivo */}
                     {filePreview && (
                         <div className="mb-4">
                             <h4 className="text-lg text-gray-300">Attached File:</h4>
@@ -148,17 +154,17 @@ const ChatBox = () => {
                             className="flex-1 p-3 bg-gray-600 text-white rounded-l-lg"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={handleKeyPress}  // Escuchar la tecla "Enter"
+                            onKeyPress={handleKeyPress}
                         />
                         <input
                             type="file"
-                            className="hidden"  // Ocultar input de archivo original
-                            ref={fileInputRef}  // Referencia para limpiar el input
+                            className="hidden"
+                            ref={fileInputRef}
                             onChange={handleFileChange}
                         />
                         <button
                             className="bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-full font-bold transition-transform transform hover:scale-105 duration-300 ease-in-out mx-2"
-                            onClick={() => fileInputRef.current.click()}  // Simular clic en el input de archivo
+                            onClick={() => fileInputRef.current.click()}
                         >
                             Choose File
                         </button>
@@ -169,6 +175,14 @@ const ChatBox = () => {
                             Send
                         </button>
                     </div>
+
+                    {popupMessage && (
+                        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                            <div className="bg-white text-black p-6 rounded-lg shadow-lg">
+                                <p className="text-xl">{popupMessage}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
