@@ -1,17 +1,38 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import forge from 'node-forge';  // Importar forge para manejar las llaves RSA
 
 const ChatsFeed = () => {
     const [activeChats, setActiveChats] = useState([]);  // Lista de chats activos simulados
     const [publicKey, setPublicKey] = useState('');  // Llave pública para unirse a un chat
     const [generatedKey, setGeneratedKey] = useState('');  // Llave pública generada
+    const [privateKey, setPrivateKey] = useState('');  // Llave privada generada
     const navigate = useNavigate();
 
-    // Crear un nuevo chat (simulado)
+    // Función para generar las llaves RSA
+    function generateKeys() {
+        const { publicKey, privateKey } = forge.pki.rsa.generateKeyPair(2048);
+        const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
+        const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
+        
+        console.log('Public Key:', publicKeyPem);
+        console.log('Private Key:', privateKeyPem);
+
+        // Retornar las llaves en formato PEM
+        return { publicKeyPem, privateKeyPem };
+    }
+
+    // Crear un nuevo chat (simulado) y generar las llaves RSA
     const handleCreateChat = () => {
         const newChatPublicKey = `chat-${Date.now()}`;  // Crear una llave pública simulada
+        
+        // Generar llaves RSA
+        const { publicKeyPem, privateKeyPem } = generateKeys();
+        setGeneratedKey(publicKeyPem);  // Guardar la llave pública generada
+        setPrivateKey(privateKeyPem);   // Guardar la llave privada generada (si necesitas manejarla)
+
+        // Agregar el nuevo chat a la lista de chats activos
         setActiveChats([...activeChats, { publicKey: newChatPublicKey }]);
-        setGeneratedKey(newChatPublicKey);  // Guardar la llave pública generada
 
         // Abrir el nuevo chat en una pestaña nueva
         const newChatUrl = `/chat/${newChatPublicKey}`;
@@ -48,6 +69,13 @@ const ChatsFeed = () => {
                     >
                         Copy Public Key
                     </button>
+                </div>
+            )}
+
+            {/* Mostrar la llave privada generada (solo si es necesario para el flujo actual) */}
+            {privateKey && (
+                <div className="text-center mb-6">
+                    <p className="text-lg">Your Private Key: <span className="font-bold">{privateKey}</span></p>
                 </div>
             )}
 

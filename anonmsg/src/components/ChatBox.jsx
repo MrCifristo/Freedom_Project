@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import forge from 'node-forge';  // Importa forge para manejar encriptación
 
 const ChatBox = () => {
-    const { publicKey } = useParams();  // Obtener la llave pública de la URL
+    const { publicKey } = useParams();  // Obtener la llave pública de la URL (llave del destinatario)
     const [username, setUsername] = useState('');  // Guardar el nombre del usuario
     const [hasJoinedChat, setHasJoinedChat] = useState(false);  // Verificar si se ha unido al chat
     const [message, setMessage] = useState('');
@@ -10,6 +11,9 @@ const ChatBox = () => {
     const [file, setFile] = useState(null);  // Para almacenar el archivo seleccionado
     const [filePreview, setFilePreview] = useState(null);  // Para previsualizar el archivo
     const fileInputRef = useRef(null);  // Para resetear el input de archivo
+    const [privateKey, setPrivateKey] = useState('');  // Para almacenar la llave privada
+    const [encryptedMessage, setEncryptedMessage] = useState('');  // Almacena el mensaje encriptado
+    const [decryptedMessage, setDecryptedMessage] = useState('');  // Almacena el mensaje desencriptado
 
     useEffect(() => {
         const simulateResponse = () => {
@@ -27,14 +31,38 @@ const ChatBox = () => {
         simulateResponse();
     }, [messages, username]);
 
+    // Función para encriptar el mensaje usando la llave pública del destinatario
+    function encryptMessage(publicKeyPem, message) {
+        const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+        const encrypted = publicKey.encrypt(forge.util.encodeUtf8(message), 'RSA-OAEP');
+        return forge.util.encode64(encrypted);
+    }
+
+    // Función para desencriptar el mensaje usando la llave privada
+    function decryptMessage(privateKeyPem, encryptedMessage) {
+        const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+        const encryptedBytes = forge.util.decode64(encryptedMessage);
+        const decrypted = privateKey.decrypt(encryptedBytes, 'RSA-OAEP');
+        return forge.util.decodeUtf8(decrypted);
+    }
+
     // Función para enviar un mensaje o archivo
     const handleSendMessage = () => {
         if (message.trim() || file) {
+            let encrypted = message;
+
+            // Encriptar el mensaje solo si hay una llave pública
+            if (publicKey) {
+                encrypted = encryptMessage(publicKey, message);  // Encripta el mensaje con la llave pública
+                setEncryptedMessage(encrypted);  // Almacena el mensaje encriptado
+            }
+
             const newMessage = {
                 sender: username,
-                text: message,
+                text: encrypted,  // El mensaje se enviará encriptado
                 file: file ? URL.createObjectURL(file) : null,  // Crear una URL para el archivo
             };
+
             setMessages([...messages, newMessage]);
             setMessage('');
             setFile(null);  // Limpiar el archivo después de enviar
@@ -43,6 +71,12 @@ const ChatBox = () => {
                 fileInputRef.current.value = '';  // Limpiar el input de archivo
             }
         }
+    };
+
+    // Función para desencriptar el mensaje con la llave privada ingresada
+    const handleDecrypt = () => {
+        const decrypted = decryptMessage(privateKey, encryptedMessage);
+        setDecryptedMessage(decrypted);
     };
 
     // Manejar el envío de mensajes al presionar "Enter"
@@ -168,6 +202,29 @@ const ChatBox = () => {
                         >
                             Send
                         </button>
+                    </div>
+
+                    {/* Nueva sección para ingresar la llave privada y desencriptar */}
+                    <div className="mt-6">
+                        <textarea
+                            placeholder="Enter your private key here..."
+                            className="w-full p-3 bg-gray-600 text-white rounded-lg mb-4"
+                            value={privateKey}
+                            onChange={(e) => setPrivateKey(e.target.value)}
+                        />
+                        <button
+                            onClick={handleDecrypt}
+                            className="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-lg font-bold transition-colors duration-300 ease-in-out"
+                        >
+                            Decrypt Message
+                        </button>
+
+                        {decryptedMessage && (
+                            <div className="mt-4">
+                                <h4 className="text-lg text-white">Decrypted Message:</h4>
+                                <p className="bg-gray-700 p-3 rounded-lg">{decryptedMessage}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

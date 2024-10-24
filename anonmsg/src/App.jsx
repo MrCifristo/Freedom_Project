@@ -5,7 +5,8 @@ import Home from './pages/Home';
 import ChatBox from './components/ChatBox';
 import ChatsFeed from './pages/ChatsFeed';
 import * as jwtDecode from 'jwt-decode';  // Importación corregida
-
+import AboutCarrousel from './components/AboutCarrousel.jsx';
+import PostEncryptDecrypt from './components/PostEncryptDecrypt.jsx';
 const App = () => {
     const [userToken, setUserToken] = useState(null);
     const [username, setUsername] = useState('');
@@ -31,7 +32,9 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/chats" element={<ChatsFeed />} />
-                <Route path="/chat/:publicKey" element={<ChatBox username={username} />} /> {/* Pasar username al chat */}
+                <Route path="/about" element={<AboutCarrousel />} />
+                <Route path="/post" element={<PostEncryptDecrypt />} /> 
+                <Route path="/chat/:publicKey" element={<ChatBox username={username} />} />
             </Routes>
         </Router>
     );
