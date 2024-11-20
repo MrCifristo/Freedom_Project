@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 const contractAddress = "0x992b58ecb6203698e3615e1ad4343a1227e12ea9";
 const contractABI = [
   "function faucet() public",
-  "function faucetAmount() public view returns (uint256)",
   "function cooldownTime() public view returns (uint256)",
   "function lastClaimed(address) public view returns (uint256)",
 ];
@@ -16,6 +15,7 @@ const TokenFaucet = () => {
   const [statusMessage, setStatusMessage] = useState(
     "Conecta tu billetera para reclamar tokens."
   );
+  const [statusColor, setStatusColor] = useState("gray");
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
   const [contract, setContract] = useState(null);
@@ -39,29 +39,67 @@ const TokenFaucet = () => {
         setContract(tempContract);
         setIsConnected(true);
         setStatusMessage("Conectado con MetaMask. Ahora puedes reclamar tokens.");
+        setStatusColor("green");
       } catch (error) {
         console.error("Error al conectar MetaMask:", error);
         setStatusMessage("Error al conectar MetaMask.");
+        setStatusColor("red");
       }
     } else {
       setStatusMessage("MetaMask no está instalado. Por favor instala MetaMask.");
+      setStatusColor("red");
+    }
+  };
+
+  const checkCooldown = async () => {
+    if (!contract || !signer) return false;
+    try {
+      const address = await signer.getAddress();
+      const lastClaimed = await contract.lastClaimed(address);
+      const cooldownTime = await contract.cooldownTime();
+
+      const currentTime = BigInt(Math.floor(Date.now() / 1000));
+      const elapsedTime = currentTime - BigInt(lastClaimed.toString());
+      const remainingTime = BigInt(cooldownTime.toString()) - elapsedTime;
+
+      if (remainingTime > 0) {
+        setStatusMessage(
+          `Tokens ya reclamados. Espere ${remainingTime.toString()} segundos para reclamar de nuevo.`
+        );
+        setStatusColor("orange");
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error al verificar el tiempo de espera:", error);
+      setStatusMessage("Error al verificar el tiempo de espera.");
+      setStatusColor("red");
+      return false;
     }
   };
 
   const claimTokens = async () => {
     if (!contract) return;
+
+    const canClaim = await checkCooldown();
+    if (!canClaim) return;
+
     try {
       setStatusMessage("Procesando transacción...");
+      setStatusColor("blue");
       const transaction = await contract.faucet();
       const receipt = await transaction.wait();
       if (receipt && receipt.status === 1) {
         setStatusMessage("Tokens reclamados exitosamente.");
+        setStatusColor("green");
       } else {
         setStatusMessage("Transacción fallida. Inténtalo de nuevo.");
+        setStatusColor("red");
       }
     } catch (error) {
       console.error("Error al reclamar tokens:", error);
       setStatusMessage("Error al reclamar tokens.");
+      setStatusColor("red");
     }
   };
 
@@ -82,10 +120,12 @@ const TokenFaucet = () => {
         {/* Status Message */}
         <div
           className={`p-4 rounded text-sm ${
-            statusMessage.includes("éxitosamente")
+            statusColor === "green"
               ? "bg-green-50 text-green-700"
-              : statusMessage.includes("Error")
+              : statusColor === "red"
               ? "bg-red-50 text-red-700"
+              : statusColor === "orange"
+              ? "bg-orange-50 text-orange-700"
               : "bg-gray-50 text-gray-600"
           }`}
         >
