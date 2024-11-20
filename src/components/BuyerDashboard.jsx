@@ -27,7 +27,7 @@ const BuyerDashboard = () => {
   // Fetch items for sale
   const fetchItems = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/items");
+      const response = await axios.get("https://archrunners.onrender.com/api/items");
       setItems(response.data);
     } catch (err) {
       console.error("Error fetching items:", err);
@@ -38,7 +38,7 @@ const BuyerDashboard = () => {
   // Fetch purchase history
   const fetchPurchaseHistory = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/purchases");
+      const response = await axios.get("https://archrunners.onrender.com/api/purchases");
       setPurchaseHistory(response.data);
     } catch (err) {
       console.error("Error fetching purchase history:", err);
@@ -99,7 +99,7 @@ const BuyerDashboard = () => {
       await transaction.wait();
 
       // Record the purchase on the backend
-      await axios.post("http://localhost:5001/api/purchases", {
+      const response = await axios.post("https://archrunners.onrender.com/api/purchases", {
         itemId: item._id,
         buyer: await signer.getAddress(),
         price: item.price,
@@ -168,7 +168,7 @@ const BuyerDashboard = () => {
                 <li key={item._id} className="flex items-center gap-4 p-4 border rounded shadow-sm bg-gray-50">
                   {item.imageUrl && (
                     <img
-                      src={`http://localhost:5001${item.imageUrl}`}
+                      src={`https://archrunners.onrender.com${item.imageUrl}`}
                       alt={item.name}
                       className="h-16 w-16 rounded object-cover border"
                     />

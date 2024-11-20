@@ -21,7 +21,7 @@ const SellerDashboard = () => {
 
   const fetchItems = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/items");
+      const response = await axios.get("https://archrunners.onrender.com/api/items");
       setItems(response.data);
     } catch (err) {
       console.error("Error fetching items:", err);
@@ -31,7 +31,7 @@ const SellerDashboard = () => {
 
   const fetchTotalSales = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/sales");
+      const response = await axios.get("https://archrunners.onrender.com/api/sales");
       setTotalSales(response.data.totalSales || 0);
     } catch (err) {
       console.error("Error fetching total sales:", err);
@@ -78,7 +78,7 @@ const SellerDashboard = () => {
 
     try {
       setLoading(true);
-      await axios.post("http://localhost:5001/api/items", formData, {
+      const response = await axios.post("https://archrunners.onrender.com/api/items", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -103,7 +103,7 @@ const SellerDashboard = () => {
     }
   
     try {
-      const response = await axios.delete(`http://localhost:5001/api/items/${id}`);
+      const response = await axios.delete(`https://archrunners.onrender.com/api/items/${id}`);
       console.log("Item deleted successfully:", response.data);
       fetchItems(); // Refresh the item list
     } catch (error) {
@@ -125,7 +125,7 @@ const SellerDashboard = () => {
 
     try {
       setLoading(true);
-      await axios.put(`http://localhost:5001/api/items/${editingItem._id}`, {
+      const response = await axios.put(`https://archrunners.onrender.com/api/items/${editingItem._id}`, {
         name: editingItem.name,
         description: editingItem.description,
         price: editingItem.price,
@@ -218,7 +218,7 @@ const SellerDashboard = () => {
               {items.map((item) => (
                 <li key={item._id} className="flex items-center gap-4 p-4 border rounded shadow-sm bg-gray-50">
                   {item.imageUrl && (
-                    <img src={`http://localhost:5001${item.imageUrl}`} alt={item.name} className="h-16 w-16 rounded object-cover border" />
+                    <img src={`https://archrunners.onrender.com${item.imageUrl}`} alt={item.name} className="h-16 w-16 rounded object-cover border" />  
                   )}
                   <div className="flex-grow">
                     <p className="font-medium text-gray-900">{item.name}</p>
